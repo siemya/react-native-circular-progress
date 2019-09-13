@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { View, ViewPropTypes } from 'react-native';
-import { Svg, Path, G } from 'react-native-svg';
+import {View, ViewPropTypes} from 'react-native';
+import {Svg, Path, G, Defs, LinearGradient, Stop} from 'react-native-svg';
 
 export default class CircularProgress extends React.PureComponent {
   polarToCartesian(centerX, centerY, radius, angleInDegrees) {
@@ -16,7 +16,19 @@ export default class CircularProgress extends React.PureComponent {
     var start = this.polarToCartesian(x, y, radius, endAngle * 0.9999);
     var end = this.polarToCartesian(x, y, radius, startAngle);
     var largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-    var d = ['M', start.x, start.y, 'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y];
+    var d = [
+      'M',
+      start.x,
+      start.y,
+      'A',
+      radius,
+      radius,
+      0,
+      largeArcFlag,
+      0,
+      end.x,
+      end.y,
+    ];
     return d.join(' ');
   }
 
@@ -36,23 +48,26 @@ export default class CircularProgress extends React.PureComponent {
       fill,
       children,
       childrenContainerStyle,
+      gradientProps,
     } = this.props;
 
-    const maxWidthCircle = backgroundWidth ? Math.max(width, backgroundWidth) : width;
+    const maxWidthCircle = backgroundWidth
+      ? Math.max(width, backgroundWidth)
+      : width;
 
     const backgroundPath = this.circlePath(
       size / 2,
       size / 2,
       size / 2 - maxWidthCircle / 2,
       0,
-      arcSweepAngle
+      arcSweepAngle,
     );
     const circlePath = this.circlePath(
       size / 2,
       size / 2,
       size / 2 - maxWidthCircle / 2,
       0,
-      (arcSweepAngle * this.clampFill(fill)) / 100
+      (arcSweepAngle * this.clampFill(fill)) / 100,
     );
     const offset = size - maxWidthCircle * 2;
 
@@ -67,13 +82,41 @@ export default class CircularProgress extends React.PureComponent {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-      }, 
+      },
       ...childrenContainerStyle,
-    }
-
+    };
+    const {
+      x1,
+      x2,
+      y1,
+      y2,
+      offset1,
+      offset2,
+      color1,
+      color2,
+      stopOpacity1,
+      stopOpacity2,
+    } = gradientProps;
     return (
       <View style={style}>
-        <Svg width={size} height={size} style={{ backgroundColor: 'transparent' }}>
+        <Svg
+          width={size}
+          height={size}
+          style={{backgroundColor: 'transparent'}}>
+          <Defs>
+            <LinearGradient id={'grad'} x1={x1} y1={y1} x2={x2} y2={y2}>
+              <Stop
+                offset={offset1}
+                stopColor={color1}
+                stopOpacity={stopOpacity1}
+              />
+              <Stop
+                offset={offset2}
+                stopColor={color2}
+                stopOpacity={stopOpacity2}
+              />
+            </LinearGradient>
+          </Defs>
           <G rotation={rotation} originX={size / 2} originY={size / 2}>
             {backgroundColor && (
               <Path
@@ -87,7 +130,7 @@ export default class CircularProgress extends React.PureComponent {
             {fill > 0 && (
               <Path
                 d={circlePath}
-                stroke={tintColor}
+                stroke={'url(#grad)'}
                 strokeWidth={width}
                 strokeLinecap={lineCap}
                 fill="transparent"
@@ -95,7 +138,9 @@ export default class CircularProgress extends React.PureComponent {
             )}
           </G>
         </Svg>
-        {children && <View style={localChildrenContainerStyle}>{children(fill)}</View>}
+        {children && (
+          <View style={localChildrenContainerStyle}>{children(fill)}</View>
+        )}
       </View>
     );
   }
